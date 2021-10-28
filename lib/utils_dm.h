@@ -74,8 +74,9 @@ static inline uint32_t act2dmflags(uint32_t act_flags)
 #define DM_CRYPT_NO_WORKQUEUE_SUPPORTED (1 << 25) /* dm-crypt suppot for bypassing workqueues  */
 #define DM_INTEGRITY_FIX_HMAC_SUPPORTED (1 << 26) /* hmac covers also superblock */
 #define DM_INTEGRITY_RESET_RECALC_SUPPORTED (1 << 27) /* dm-integrity automatic recalculation supported */
+#define DM_BLK_CRYPTO_SUPPORTED (1 << 28)
 
-typedef enum { DM_CRYPT = 0, DM_VERITY, DM_INTEGRITY, DM_LINEAR, DM_ERROR, DM_ZERO, DM_UNKNOWN } dm_target_type;
+typedef enum { DM_CRYPT = 0, DM_BLK_CRYPTO, DM_VERITY, DM_INTEGRITY, DM_LINEAR, DM_ERROR, DM_ZERO, DM_UNKNOWN } dm_target_type;
 enum tdirection { TARGET_SET = 1, TARGET_QUERY };
 
 int dm_flags(struct crypt_device *cd, dm_target_type target, uint32_t *flags);
@@ -114,6 +115,17 @@ struct dm_target {
 		uint32_t tag_size;	/* additional on-disk tag size */
 		uint32_t sector_size;	/* encryption sector size */
 	} crypt;
+	struct {
+		const char *cipher;
+
+		/* Active key for device */
+		struct volume_key *vk;
+
+		/* struct crypt_active_device */
+		uint64_t offset;	/* offset in sectors */
+		uint64_t dun_offset;
+		uint32_t data_unit_size;
+	} blk_crypto;
 	struct {
 		struct device *hash_device;
 		struct device *fec_device;
@@ -203,6 +215,10 @@ int dm_integrity_target_set(struct crypt_device *cd,
 int dm_linear_target_set(struct dm_target *tgt, uint64_t seg_offset, uint64_t seg_size,
 	struct device *data_device, uint64_t data_offset);
 int dm_zero_target_set(struct dm_target *tgt, uint64_t seg_offset, uint64_t seg_size);
+int dm_blk_crypto_target_set(struct dm_target *tgt, uint64_t seg_offset, uint64_t seg_size,
+			     struct device *data_device, struct volume_key *vk,
+			     const char *cipher, uint64_t dun_offset,
+			     uint64_t data_offset, uint32_t data_unit_size);
 
 int dm_remove_device(struct crypt_device *cd, const char *name, uint32_t flags);
 int dm_status_device(struct crypt_device *cd, const char *name);

@@ -214,7 +214,8 @@ int LUKS2_generate_hdr(
 	uint64_t align_offset,     /* in bytes */
 	uint64_t required_alignment,
 	uint64_t metadata_size,
-	uint64_t keyslots_size)
+	uint64_t keyslots_size,
+	bool use_inline_crypto_engine)
 {
 	struct json_object *jobj_segment, *jobj_integrity, *jobj_keyslots, *jobj_segments, *jobj_config;
 	char cipher[128];
@@ -316,6 +317,12 @@ int LUKS2_generate_hdr(
 
 	if (LUKS2_digest_segment_assign(cd, hdr, 0, digest, 1, 0) < 0)
 		goto err;
+
+	if (use_inline_crypto_engine) {
+		r = LUKS2_config_set_requirements(cd, hdr, CRYPT_REQUIREMENT_INLINE_CRYPTO_ENGINE, 0);
+		if (r < 0)
+			goto err;
+	}
 
 	jobj_segment = json_segment_create_crypt(data_offset, 0, NULL, cipher, sector_size, 0);
 	if (!jobj_segment)

@@ -128,6 +128,8 @@ CRYPTSETUP_2.0 {
 		crypt_safe_realloc;
 		crypt_safe_free;
 		crypt_safe_memzero;
+
+		crypt_format_luks2_ice;
 	local:
 		*;
 };

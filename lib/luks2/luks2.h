@@ -362,7 +362,8 @@ int LUKS2_generate_hdr(
 	uint64_t align_offset,
 	uint64_t required_alignment,
 	uint64_t metadata_size,
-	uint64_t keyslots_size);
+	uint64_t keyslots_size,
+	bool use_inline_crypto_engine);
 
 int LUKS2_check_metadata_area_size(uint64_t metadata_size);
 int LUKS2_check_keyslots_area_size(uint64_t keyslots_size);

@@ -644,6 +644,14 @@ int crypt_format(struct crypt_device *cd,
 	size_t volume_key_size,
 	void *params);
 
+int crypt_format_luks2_ice(struct crypt_device *cd,
+	const char *cipher,
+	const char *cipher_mode,
+	const char *uuid,
+	const char *volume_key,
+	size_t volume_key_size,
+	struct crypt_params_luks2 *params);
+
 /**
  * Set format compatibility flags.
  *
@@ -1126,6 +1134,8 @@ int crypt_keyslot_destroy(struct crypt_device *cd, int keyslot);
 #define CRYPT_ACTIVATE_NO_WRITE_WORKQUEUE (1 << 25)
 /** dm-integrity: reset automatic recalculation */
 #define CRYPT_ACTIVATE_RECALCULATE_RESET (1 << 26)
+/** dm-blk-crypto: allow the use of the kernel's crypto API */
+#define CRYPT_ACTIVATE_ALLOW_FALLBACK (1 << 27)
 
 /**
  * Active device runtime attributes
@@ -1177,6 +1187,7 @@ uint64_t crypt_get_active_integrity_failures(struct crypt_device *cd,
 #define CRYPT_REQUIREMENT_OFFLINE_REENCRYPT	(1 << 0)
 /** Online reencryption in-progress */
 #define CRYPT_REQUIREMENT_ONLINE_REENCRYPT	(1 << 1)
+#define CRYPT_REQUIREMENT_INLINE_CRYPTO_ENGINE	(1 << 2)
 /** unknown requirement in header (output only) */
 #define CRYPT_REQUIREMENT_UNKNOWN		(1 << 31)
 

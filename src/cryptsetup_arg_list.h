@@ -27,6 +27,8 @@ ARG(OPT_ALIGN_PAYLOAD, '\0', POPT_ARG_STRING, N_("Align payload at <n> sector bo
 
 ARG(OPT_ALLOW_DISCARDS, '\0', POPT_ARG_NONE, N_("Allow discards (aka TRIM) requests for device"), NULL, CRYPT_ARG_BOOL, {}, OPT_ALLOW_DISCARDS_ACTIONS)
 
+ARG(OPT_ALLOW_FALLBACK, '\0', POPT_ARG_NONE, N_("Allow fallback to the kernel crypto API when opening a device using the dm-blk-crypto target"), NULL, CRYPT_ARG_BOOL, {}, OPT_ALLOW_FALLBACK_ACTIONS)
+
 ARG(OPT_BATCH_MODE, 'q', POPT_ARG_NONE, N_("Do not ask for confirmation"), NULL, CRYPT_ARG_BOOL, {}, {})
 
 ARG(OPT_CANCEL_DEFERRED, '\0', POPT_ARG_NONE, N_("Cancel a previously set deferred device removal"), NULL, CRYPT_ARG_BOOL, {}, OPT_DEFERRED_ACTIONS)
@@ -68,6 +70,8 @@ ARG(OPT_HEADER_BACKUP_FILE, '\0', POPT_ARG_STRING, N_("File with LUKS header and
 ARG(OPT_HOTZONE_SIZE, '\0', POPT_ARG_STRING, N_("Maximal reencryption hotzone size."), N_("bytes"), CRYPT_ARG_UINT64, {}, OPT_HOTZONE_SIZE_ACTIONS)
 
 ARG(OPT_INIT_ONLY, '\0', POPT_ARG_NONE, N_("Initialize LUKS2 reencryption in metadata only."), NULL, CRYPT_ARG_BOOL, {}, {})
+
+ARG(OPT_INLINE_CRYPTO_ENGINE, '\0', POPT_ARG_NONE, N_("Use an inline crypto engine via the kernel's dm-blk-crypto target"), NULL, CRYPT_ARG_BOOL, {}, OPT_INLINE_CRYPTO_ENGINE_ACTIONS)
 
 ARG(OPT_INTEGRITY, 'I', POPT_ARG_STRING, N_("Data integrity algorithm (LUKS2 only)"), NULL, CRYPT_ARG_STRING, {}, OPT_INTEGRITY_ACTIONS)
 

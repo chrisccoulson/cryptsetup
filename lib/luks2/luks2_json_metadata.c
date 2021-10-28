@@ -1154,6 +1154,11 @@ static int reqs_reencrypt_online(uint32_t reqs)
 	return reqs & CRYPT_REQUIREMENT_ONLINE_REENCRYPT;
 }
 
+static int reqs_inline_crypto_engine(uint32_t reqs)
+{
+	return reqs & CRYPT_REQUIREMENT_INLINE_CRYPTO_ENGINE;
+}
+
 int LUKS2_hdr_restore(struct crypt_device *cd, struct luks2_hdr *hdr,
 		     const char *backup_file)
 {
@@ -1395,6 +1400,7 @@ static const struct  {
 } requirements_flags[] = {
 	{ CRYPT_REQUIREMENT_OFFLINE_REENCRYPT, "offline-reencrypt" },
 	{ CRYPT_REQUIREMENT_ONLINE_REENCRYPT, "online-reencrypt" },
+	{ CRYPT_REQUIREMENT_INLINE_CRYPTO_ENGINE, "x-ubuntu-inline-crypto-engine" },
 	{ 0, NULL }
 };
 
@@ -2176,15 +2182,22 @@ int LUKS2_activate(struct crypt_device *cd,
 	struct crypt_dm_active_device dmdi = {}, dmd = {
 		.uuid   = crypt_get_uuid(cd)
 	};
+	uint32_t reqs;
 
 	/* do not allow activation when particular requirements detected */
-	if ((r = LUKS2_unmet_requirements(cd, hdr, 0, 0)))
+	if ((r = LUKS2_unmet_requirements(cd, hdr, CRYPT_REQUIREMENT_INLINE_CRYPTO_ENGINE, 0)))
 		return r;
 
-	r = dm_crypt_target_set(&dmd.segment, 0, dmd.size, crypt_data_device(cd),
-			vk, crypt_get_cipher_spec(cd), crypt_get_iv_offset(cd),
-			crypt_get_data_offset(cd), crypt_get_integrity(cd) ?: "none",
-			crypt_get_integrity_tag_size(cd), crypt_get_sector_size(cd));
+	LUKS2_config_get_requirements(cd, hdr, &reqs);
+	if (reqs_inline_crypto_engine(reqs))
+		r = dm_blk_crypto_target_set(&dmd.segment, 0, dmd.size, crypt_data_device(cd),
+					     vk, crypt_get_cipher_spec(cd), crypt_get_iv_offset(cd),
+					     crypt_get_data_offset(cd), crypt_get_sector_size(cd));
+	else
+		r = dm_crypt_target_set(&dmd.segment, 0, dmd.size, crypt_data_device(cd),
+				vk, crypt_get_cipher_spec(cd), crypt_get_iv_offset(cd),
+				crypt_get_data_offset(cd), crypt_get_integrity(cd) ?: "none",
+				crypt_get_integrity_tag_size(cd), crypt_get_sector_size(cd));
 	if (r < 0)
 		return r;
 
@@ -2202,6 +2215,11 @@ int LUKS2_activate(struct crypt_device *cd,
 
 		if (dmd.flags & CRYPT_ACTIVATE_ALLOW_DISCARDS) {
 			log_err(cd, _("Discard/TRIM is not supported."));
+			return -EINVAL;
+		}
+
+		if (dmd.segment.type == DM_BLK_CRYPTO) {
+			log_err(cd, _("Cannot use integrity with inline crypto engine"));
 			return -EINVAL;
 		}
 
@@ -2391,6 +2409,8 @@ int LUKS2_unmet_requirements(struct crypt_device *cd, struct luks2_hdr *hdr, uin
 		log_err(cd, _("Operation incompatible with device marked for legacy reencryption. Aborting."));
 	if (reqs_reencrypt_online(reqs) && !quiet)
 		log_err(cd, _("Operation incompatible with device marked for LUKS2 reencryption. Aborting."));
+	if (reqs_inline_crypto_engine(reqs) && !quiet)
+		log_err(cd, _("Operation incompatible with device that uses an inline crypto engine. Aborting."));
 
 	/* any remaining unmasked requirement fails the check */
 	return reqs ? -EINVAL : 0;

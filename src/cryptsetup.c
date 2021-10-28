@@ -149,6 +149,9 @@ static void _set_activation_flags(uint32_t *flags)
 	/* Only for plain */
 	if (ARG_SET(OPT_IV_LARGE_SECTORS_ID))
 		*flags |= CRYPT_ACTIVATE_IV_LARGE_SECTORS;
+
+	if (ARG_SET(OPT_ALLOW_FALLBACK_ID))
+		*flags |= CRYPT_ACTIVATE_ALLOW_FALLBACK;
 }
 
 static void _set_reencryption_flags(uint32_t *flags)
@@ -1368,6 +1371,11 @@ static int _luksFormat(struct crypt_device **r_cd, char **r_password, size_t *r_
 			log_err(_("Unsupported LUKS2 metadata size options."));
 			return -EINVAL;
 		}
+
+		if (ARG_SET(OPT_INLINE_CRYPTO_ENGINE_ID)) {
+			log_err(_("Inline crypto engine support can only be used with LUKS2."));
+			return -EINVAL;
+		}
 	} else
 		return -EINVAL;
 
@@ -1486,8 +1494,12 @@ static int _luksFormat(struct crypt_device **r_cd, char **r_password, size_t *r_
 	if (ARG_SET(OPT_INTEGRITY_LEGACY_PADDING_ID))
 		crypt_set_compatibility(cd, CRYPT_COMPAT_LEGACY_INTEGRITY_PADDING);
 
-	r = crypt_format(cd, type, cipher, cipher_mode,
-			 ARG_STR(OPT_UUID_ID), key, keysize, params);
+	if (ARG_SET(OPT_INLINE_CRYPTO_ENGINE_ID))
+		r = crypt_format_luks2_ice(cd, cipher, cipher_mode,
+					   ARG_STR(OPT_UUID_ID), key, keysize, &params2);
+	else
+		r = crypt_format(cd, type, cipher, cipher_mode,
+				 ARG_STR(OPT_UUID_ID), key, keysize, params);
 	check_signal(&r);
 	if (r < 0)
 		goto out;
